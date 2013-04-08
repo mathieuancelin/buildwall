@@ -1,0 +1,94 @@
+@(id: String)
+
+@main("Jenkins jobs monitoring for " + id) {
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="brand" href="@routes.Application.index(id)">@id jobs </a>
+                <ul class="nav">
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a href="@routes.Application.indexAll()">All views</a>
+                    </li>
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a id="displayLegend" href="#">Help</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="errorMessage" class="alert alert-error">
+        <b>Error : </b>the EventSource is disconnect. There might be some issue with the server.
+    </div>
+    <div id="jobs" style="margin-top: 20px;">
+
+    </div>
+
+    <script type="text/html" id="job_tmpl">
+        <div id="cell-{{job.id}}" class="jobcell result">
+            <p class="{{job.color}}" name="{{job.id}}" >
+                <em>
+                        {{job.id}}
+                </em>
+            </p>
+        </div>
+    </script>
+    <script type="text/html" id="inside_job_tmpl">
+        <p class="{{job.color}}" name="{{job.id}}" >
+            <em>
+                    {{job.id}}
+            </em>
+        </p>
+    </script>
+    <script type="text/javascript">
+
+        function render(templateId, view) {
+            return Mustache.render( $(templateId).html(), view )
+        }
+
+        $(document).ready(function() {
+            function updateJobCellWithId(id, data) {
+                if($('#cell-' + id).length == 0) {
+                    $('#jobs').append(render('#job_tmpl', {job: data}));
+                } else {
+                    $('#cell-' + id).empty();
+                    $('#cell-' + id).html(render('#inside_job_tmpl', {job: data}));
+                }
+                if (data.color === 'failed') {
+                    $('#cell-' + id).addClass('shake-container');
+                } else if (data.color === 'warning') {
+                    $('#cell-' + id).addClass('zoom-container');
+                } else if (data.color === 'anime') {
+                    $('#cell-' + id).addClass('anime-container');
+                } else {
+                    $('#cell-' + id).removeClass('anime-container');
+                    $('#cell-' + id).removeClass('shale-container');
+                    $('#cell-' + id).removeClass('zoom-container');
+                }
+            }
+
+            var sse = new EventSource('@routes.Application.view(id)');
+            sse.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                updateJobCellWithId(data.id, data);
+            };
+            sse.onclose = function() {
+                $('#jobs').empty();
+                $('#jobs').hide();
+                $('#errorMessage').show();
+            };
+            sse.onopen = function() {
+                $('#jobs').show();
+                $('#errorMessage').hide();
+            };
+        });
+    </script>
+    
+}

@@ -1,0 +1,33 @@
+@(views: Seq[String])
+
+@main("Jenkins jobs monitoring") {
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="brand" href="@routes.Application.indexAll()">All views </a>
+                <ul class="nav">
+                    <li class="divider-vertical"></li>
+                    <li>
+                        <a id="displayLegend" href="#">Help</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <table class="table bigtable">
+        @for(id <- views) {
+            <tr><td><a href="@routes.Application.index(id)">@id</a></td></tr>
+        }
+    </table>
+
+    <ul class="unstyled">
+
+    </ul>
+}
