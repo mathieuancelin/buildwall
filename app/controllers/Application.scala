@@ -1,6 +1,7 @@
 package controllers
 
 import play.api._
+import cache.Cache
 import libs.concurrent.Promise
 import libs.EventSource
 import libs.iteratee.Enumerator
@@ -15,7 +16,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 object Application extends Controller {
 
-  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int)
+  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String)
 
   val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("http://172.17.104.69:8080")
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
@@ -25,32 +26,31 @@ object Application extends Controller {
   def indexAll() = Action {
     Async {
       WS.url(s"$baseUrl/api/json").get().map { r =>
-        val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map { view =>
-          (view \ "name").as[String]
-        }
+        val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
         Ok(views.html.all(names))
       }
     }
   }
   
-  def index(id: String) = Action {
-    Ok(views.html.index(id))
+  def index(viewId: String) = Action {
+    Ok(views.html.index(viewId))
   }
 
-  def view(id: String) = Action {
+  def view(viewId: String) = Action { request =>
     Async {
-      WS.url(s"$baseUrl/view/$id/api/json").get().map { response =>
+      val refresh = request.queryString.get("refresh").flatMap(_.headOption).map(_.toInt).getOrElse(refreshInterval)
+      WS.url(s"$baseUrl/view/$viewId/api/json").get().map { response =>
         (response.json \ "jobs").as[Seq[JsValue]].map { jsonJob =>
-          createEnumerator((jsonJob \ "name").as[String])
+          createEnumerator((jsonJob \ "name").as[String], refresh)
         }.reduceLeft((enumA, enumB) => enumA.interleave(enumB))
       }.map(enumerator => Ok.feed(enumerator.through(EventSource())).as("text/event-stream"))
     }
   }
 
-  def createEnumerator(id: String) = {
+  def createEnumerator(jobId: String, refresh: Int) = {
     Enumerator.generateM[JsValue] {
-      Promise.timeout(Some(""), Duration(refreshInterval, TimeUnit.SECONDS)).flatMap { some =>
-        WS.url(s"$baseUrl/job/$id/api/json").get().flatMap { jobRes =>
+      Promise.timeout(Some(""), Duration(refresh, TimeUnit.SECONDS)).flatMap { some =>
+        WS.url(s"$baseUrl/job/$jobId/api/json").get().flatMap { jobRes =>
           val color = (jobRes.json \ "color").as[String] match {
             case "blue" => "passed"
             case "red" => "failed"
@@ -60,10 +60,15 @@ object Application extends Controller {
           }
           val url = (jobRes.json \ "lastBuild" \ "url").as[String]
           WS.url(s"$url/api/json").get().map { lastJobRes =>
-            val building = (lastJobRes.json \ "building").as[Boolean]
-            val duration = (lastJobRes.json \ "duration").as[Int]
-            val estimated = (lastJobRes.json \ "estimatedDuration").as[Int]
-            Some(jobWriter.writes(Job(id, color, building, duration, estimated)))
+            val json = lastJobRes.json
+            val author = (json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
+              (value \ "author" \ "fullName").as[String]
+            }.getOrElse("")
+            Some(jobWriter.writes( Job(jobId, color,
+                (json \ "building").as[Boolean],
+                (json \ "duration").as[Int],
+                (json \ "estimatedDuration").as[Int], author)
+            ))
           }
         }
       }
