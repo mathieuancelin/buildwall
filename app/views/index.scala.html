@@ -85,6 +85,11 @@
                 $('#jobs').hide();
                 $('#errorMessage').show();
             };
+            sse.onerror = function() {
+                $('#jobs').empty();
+                $('#jobs').hide();
+                $('#errorMessage').show();
+            };
             sse.onopen = function() {
                 $('#jobs').show();
                 $('#errorMessage').hide();
