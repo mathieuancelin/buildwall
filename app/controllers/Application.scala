@@ -65,7 +65,7 @@ object Application extends Controller {
             val author = (json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
               (value \ "author" \ "fullName").as[String]
             }.getOrElse("")
-            val email = author.toLowerCase().split(" ").mkString(".") + "@alliadis.com"
+            val email = author.trim.toLowerCase().split(" ").mkString(".").concat("@test.com")
             val crypt = Codecs.md5(email.getBytes)
             val url = s"http://www.gravatar.com/avatar/$crypt?s=40&d=identicon"
             Some(jobWriter.writes( Job(jobId, color,
