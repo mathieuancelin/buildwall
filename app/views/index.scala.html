@@ -27,18 +27,9 @@
     <div id="errorMessage" class="alert alert-error">
         <b>Error : </b>the EventSource is disconnect. There might be some issue with the server.
     </div>
-    <div id="jobs" style="margin-top: 20px;">
-
-    </div>
-
+    <div id="jobs" style="margin-top: 20px;"></div>
     <script type="text/html" id="job_tmpl">
-        <div id="cell-{{job.id}}" class="jobcell result">
-            <p class="{{job.color}}" name="{{job.id}}" >
-                <em>
-                        {{job.id}}
-                </em>
-            </p>
-        </div>
+        <div id="cell-{{job.id}}" class="jobcell result"></div>
     </script>
     <script type="text/html" id="inside_job_tmpl">
         <p class="{{job.color}}" name="{{job.id}}" >
@@ -53,12 +44,22 @@
             return Mustache.render( $(templateId).html(), view )
         }
 
+        function showJob() {
+            $('#jobs').show();
+            $('#errorMessage').hide();
+        }
 
+        function hideJobs() {
+            $('#jobs').empty();
+            $('#jobs').hide();
+            $('#errorMessage').show();
+        }
 
         $(document).ready(function() {
             function updateJobCellWithId(id, data) {
                 if($('#cell-' + id).length == 0) {
                     $('#jobs').append(render('#job_tmpl', {job: data}));
+                    $('#cell-' + id).html(render('#inside_job_tmpl', {job: data}));
                 } else {
                     $('#cell-' + id).empty();
                     $('#cell-' + id).html(render('#inside_job_tmpl', {job: data}));
@@ -83,18 +84,13 @@
                 updateJobCellWithId(data.id, data);
             };
             sse.onclose = function() {
-                $('#jobs').empty();
-                $('#jobs').hide();
-                $('#errorMessage').show();
+                hideJobs();
             };
             sse.onerror = function() {
-                $('#jobs').empty();
-                $('#jobs').hide();
-                $('#errorMessage').show();
+                hideJobs();
             };
             sse.onopen = function() {
-                $('#jobs').show();
-                $('#errorMessage').hide();
+                showJob();
             };
         });
     </script>
