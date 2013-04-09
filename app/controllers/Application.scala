@@ -3,7 +3,7 @@ package controllers
 import play.api._
 import cache.Cache
 import libs.concurrent.Promise
-import libs.EventSource
+import libs.{Codecs, Crypto, EventSource}
 import libs.iteratee.Enumerator
 import libs.json.{Json, JsValue}
 import libs.ws.WS
@@ -13,10 +13,11 @@ import java.util.concurrent.TimeUnit
 import play.api.Play.current
 
 import play.api.libs.concurrent.Execution.Implicits._
+import concurrent.Future
 
 object Application extends Controller {
 
-  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String)
+  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String, email: String)
 
   val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("http://172.17.104.69:8080")
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
@@ -64,10 +65,13 @@ object Application extends Controller {
             val author = (json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
               (value \ "author" \ "fullName").as[String]
             }.getOrElse("")
+            val email = author.toLowerCase().split(" ").mkString(".") + "@alliadis.com"
+            val crypt = Codecs.md5(email.getBytes)
+            val url = s"http://www.gravatar.com/avatar/$crypt?s=40&d=identicon"
             Some(jobWriter.writes( Job(jobId, color,
                 (json \ "building").as[Boolean],
                 (json \ "duration").as[Int],
-                (json \ "estimatedDuration").as[Int], author)
+                (json \ "estimatedDuration").as[Int], author, url)
             ))
           }
         }
@@ -75,3 +79,25 @@ object Application extends Controller {
     }
   }
 }
+
+
+/**
+(json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
+  (value \ "author" \ "absoluteUrl").as[String]
+}.map { absoluteUrl =>
+  WS.url(s"$absoluteUrl/api/json").get().map({ authorRes =>
+    val email = (authorRes.json \ "property").as[Seq[JsValue]].filter(_.\("address").asOpt[String].isDefined).headOption.map(_.\("address").as[String]).getOrElse("")
+    Some(jobWriter.writes( Job(jobId, color,
+      (json \ "building").as[Boolean],
+      (json \ "duration").as[Int],
+      (json \ "estimatedDuration").as[Int], author, email)
+    ))
+  })
+}.getOrElse(
+  Future(Some(jobWriter.writes( Job(jobId, color,
+    (json \ "building").as[Boolean],
+    (json \ "duration").as[Int],
+    (json \ "estimatedDuration").as[Int], author, "")
+  )))
+)
+**/
