@@ -39,23 +39,19 @@
         </p>
     </script>
     <script type="text/javascript">
-
-        function render(templateId, view) {
-            return Mustache.render( $(templateId).html(), view )
-        }
-
-        function showJob() {
-            $('#jobs').show();
-            $('#errorMessage').hide();
-        }
-
-        function hideJobs() {
-            $('#jobs').empty();
-            $('#jobs').hide();
-            $('#errorMessage').show();
-        }
-
         $(document).ready(function() {
+            function render(templateId, view) {
+                return Mustache.render( $(templateId).html(), view )
+            }
+            function showJob() {
+                $('#jobs').show();
+                $('#errorMessage').hide();
+            }
+            function hideJobs() {
+                $('#jobs').empty();
+                $('#jobs').hide();
+                $('#errorMessage').show();
+            }
             function updateJobCellWithId(id, data) {
                 if($('#cell-' + id).length == 0) {
                     $('#jobs').append(render('#job_tmpl', {job: data}));
@@ -77,7 +73,6 @@
                     $('#cell-' + id).removeClass('zoom-container');
                 }
             }
-
             var sse = new EventSource('@routes.Application.view(id)');
             sse.onmessage = function(e) {
                 var data = JSON.parse(e.data);
