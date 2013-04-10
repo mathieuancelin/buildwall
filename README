@@ -1,4 +1,8 @@
-This is your new Play 2.1 application
+BuildWall
 =====================================
 
-This file will be packaged with your application, when using `play dist`.
+A dumb buildwall for Jenkins built with Play2. Allows you to select a particular build view.
+
+Make heavy use of async, non-blocking http client, Iteratees and cheesy CSS3 animations.
+
+You can hack it the way you want. Pull requests are welcome :-)
