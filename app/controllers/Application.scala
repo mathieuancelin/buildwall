@@ -69,7 +69,8 @@ object Application extends Controller {
             Some(jobWriter.writes( Job(jobId, color,
                 (json \ "building").as[Boolean],
                 (json \ "duration").as[Int],
-                (json \ "estimatedDuration").as[Int], author._1,
+                (json \ "estimatedDuration").as[Int],
+                author._1,
                 Cache.getAs[String](emailKey(author._1)).getOrElse("unknown@test.com"),
                 Cache.getAs[String](gravatarKey(author._1)).getOrElse("http://www.gravatar.com/avatar/xxxxxx?s=40&d=identicon"))
             ))
