@@ -17,7 +17,7 @@ import concurrent.Future
 
 object Application extends Controller {
 
-  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String, email: String)
+  case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String, email: String, gravatar: String)
 
   val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("http://172.17.104.69:8080")
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
@@ -63,41 +63,36 @@ object Application extends Controller {
           WS.url(s"$url/api/json").get().map { lastJobRes =>
             val json = lastJobRes.json
             val author = (json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
-              (value \ "author" \ "fullName").as[String]
-            }.getOrElse("")
-            val email = author.trim.toLowerCase().split(" ").mkString(".").concat("@test.com")
-            val crypt = Codecs.md5(email.getBytes)
-            val url = s"http://www.gravatar.com/avatar/$crypt?s=40&d=identicon"
+              ((value \ "author" \ "fullName").as[String], (value \ "author" \ "absoluteUrl").as[String])
+            }.getOrElse(("unknown", "unknown@test.com"))
+            Future { populateCache(author._1, author._2) }
             Some(jobWriter.writes( Job(jobId, color,
                 (json \ "building").as[Boolean],
                 (json \ "duration").as[Int],
-                (json \ "estimatedDuration").as[Int], author, url)
+                (json \ "estimatedDuration").as[Int], author._1,
+                Cache.getAs[String](emailKey(author._1)).getOrElse("unknown@test.com"),
+                Cache.getAs[String](gravatarKey(author._1)).getOrElse("http://www.gravatar.com/avatar/xxxxxx?s=40&d=identicon"))
             ))
           }
         }
       }
     }
   }
+
+  def emailKey(user: String) = s"$user-emailaddress"
+  def gravatarKey(user: String) = s"$user-gravatarurl"
+
+  def populateCache(user: String, url: String) = {
+    if (Cache.get(emailKey(user)).isEmpty) {
+      WS.url(s"$url/api/json").get().map { authorRes =>
+        val email = (authorRes.json \ "property").as[Seq[JsValue]].filter(_.\("address").asOpt[String].isDefined).headOption.map(_.\("address").as[String]).getOrElse("")
+        val crypt = Codecs.md5(email.getBytes)
+        val urlGravatar = s"http://www.gravatar.com/avatar/$crypt?s=40&d=identicon"
+        if (Cache.get(emailKey(user)).isEmpty) {
+          Cache.set(emailKey(user), email, 86400)
+          Cache.set(gravatarKey(user), urlGravatar, 86400)
+        }
+      }
+    }
+  }
 }
-
-
-/**
-(json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
-  (value \ "author" \ "absoluteUrl").as[String]
-}.map { absoluteUrl =>
-  WS.url(s"$absoluteUrl/api/json").get().map({ authorRes =>
-    val email = (authorRes.json \ "property").as[Seq[JsValue]].filter(_.\("address").asOpt[String].isDefined).headOption.map(_.\("address").as[String]).getOrElse("")
-    Some(jobWriter.writes( Job(jobId, color,
-      (json \ "building").as[Boolean],
-      (json \ "duration").as[Int],
-      (json \ "estimatedDuration").as[Int], author, email)
-    ))
-  })
-}.getOrElse(
-  Future(Some(jobWriter.writes( Job(jobId, color,
-    (json \ "building").as[Boolean],
-    (json \ "duration").as[Int],
-    (json \ "estimatedDuration").as[Int], author, "")
-  )))
-)
-**/
