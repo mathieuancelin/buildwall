@@ -19,7 +19,7 @@ object Application extends Controller {
 
   case class Job(id: String, color: String, building: Boolean, duration: Int, estimated: Int, author: String, email: String, gravatar: String)
 
-  val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("http://172.17.104.69:8080")
+  val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("https://ci.jenkins-ci.org")
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
 
   val jobWriter = Json.writes[Job]
