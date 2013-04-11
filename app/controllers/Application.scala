@@ -24,9 +24,10 @@ object Application extends Controller {
 
   val jobWriter = Json.writes[Job]
 
-  def indexAll() = Action {
+  def indexAll() = Action { request =>
     Async {
-      WS.url(s"$baseUrl/api/json").get().map { r =>
+      val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
+      WS.url(s"$jenkinsUrl/api/json").get().map { r =>
         val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
         Ok(views.html.all(names))
       }
@@ -39,19 +40,20 @@ object Application extends Controller {
 
   def view(viewId: String) = Action { request =>
     Async {
-      val refresh = request.queryString.get("refresh").flatMap(_.headOption).map(_.toInt).getOrElse(refreshInterval)
-      WS.url(s"$baseUrl/view/$viewId/api/json").get().map { response =>
+      val jenkinsRefresh = request.queryString.get("refresh").flatMap(_.headOption).map(_.toInt).getOrElse(refreshInterval)
+      val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
+      WS.url(s"$jenkinsUrl/view/$viewId/api/json").get().map { response =>
         (response.json \ "jobs").as[Seq[JsValue]].map { jsonJob =>
-          createEnumerator((jsonJob \ "name").as[String], refresh)
+          createEnumerator((jsonJob \ "name").as[String], jenkinsRefresh, jenkinsUrl)
         }.reduceLeft((enumA, enumB) => enumA.interleave(enumB))
       }.map(enumerator => Ok.feed(enumerator.through(EventSource())).as("text/event-stream"))
     }
   }
 
-  def createEnumerator(jobId: String, refresh: Int) = {
+  def createEnumerator(jobId: String, refresh: Int, jenkinsUrl: String) = {
     Enumerator.generateM[JsValue] {
       Promise.timeout(Some(""), Duration(refresh, TimeUnit.SECONDS)).flatMap { some =>
-        WS.url(s"$baseUrl/job/$jobId/api/json").get().flatMap { jobRes =>
+        WS.url(s"$jenkinsUrl/job/$jobId/api/json").get().flatMap { jobRes =>
           val color = (jobRes.json \ "color").as[String] match {
             case "blue" => "passed"
             case "red" => "failed"
