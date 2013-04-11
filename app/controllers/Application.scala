@@ -27,7 +27,7 @@ object Application extends Controller {
   def indexAll() = Action { request =>
     Async {
       val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
-      WS.url(s"$jenkinsUrl/api/json").get().map { r =>
+      WS.url(s"$jenkinsUrl/api/json").withTimeout(5000).get().map { r =>
         val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
         Ok(views.html.all(names))
       }
@@ -42,7 +42,7 @@ object Application extends Controller {
     Async {
       val jenkinsRefresh = request.queryString.get("refresh").flatMap(_.headOption).map(_.toInt).getOrElse(refreshInterval)
       val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
-      WS.url(s"$jenkinsUrl/view/$viewId/api/json").get().map { response =>
+      WS.url(s"$jenkinsUrl/view/$viewId/api/json").withTimeout(5000).get().map { response =>
         (response.json \ "jobs").as[Seq[JsValue]].map { jsonJob =>
           createEnumerator((jsonJob \ "name").as[String], jenkinsRefresh, jenkinsUrl)
         }.reduceLeft((enumA, enumB) => enumA.interleave(enumB))
@@ -53,7 +53,7 @@ object Application extends Controller {
   def createEnumerator(jobId: String, refresh: Int, jenkinsUrl: String) = {
     Enumerator.generateM[JsValue] {
       Promise.timeout(Some(""), Duration(refresh, TimeUnit.SECONDS)).flatMap { some =>
-        WS.url(s"$jenkinsUrl/job/$jobId/api/json").get().flatMap { jobRes =>
+        WS.url(s"$jenkinsUrl/job/$jobId/api/json").withTimeout(5000).get().flatMap { jobRes =>
           val color = (jobRes.json \ "color").as[String] match {
             case "blue" => "passed"
             case "red" => "failed"
@@ -62,7 +62,7 @@ object Application extends Controller {
             case _ => "unknownstatus"
           }
           val url = (jobRes.json \ "lastBuild" \ "url").as[String]
-          WS.url(s"$url/api/json").get().map { lastJobRes =>
+          WS.url(s"$url/api/json").withTimeout(5000).get().map { lastJobRes =>
             val json = lastJobRes.json
             val author = (json \ "changeSet" \ "items").as[Seq[JsValue]].headOption.map { value =>
               ((value \ "author" \ "fullName").as[String], (value \ "author" \ "absoluteUrl").as[String])
@@ -87,7 +87,7 @@ object Application extends Controller {
 
   def populateCache(user: String, url: String) = {
     if (Cache.get(emailKey(user)).isEmpty) {
-      WS.url(s"$url/api/json").get().map { authorRes =>
+      WS.url(s"$url/api/json").withTimeout(5000).get().map { authorRes =>
         val email = (authorRes.json \ "property").as[Seq[JsValue]].filter(_.\("address").asOpt[String].isDefined).headOption.map(_.\("address").as[String]).getOrElse("")
         val crypt = Codecs.md5(email.getBytes)
         val urlGravatar = s"http://www.gravatar.com/avatar/$crypt?s=40&d=identicon"
