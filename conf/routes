@@ -3,9 +3,9 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.indexAll()
-GET     /:id                        controllers.Application.index(id)
-GET     /view/:id                   controllers.Application.view(id)
+GET     /                           controllers.Application.indexAll(url: Option[String])
+GET     /:id                        controllers.Application.index(id, url: Option[String], refresh: Option[Int])
+GET     /view/:id                   controllers.Application.view(id, url: Option[String], refresh: Option[Int])
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

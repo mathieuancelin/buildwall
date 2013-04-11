@@ -1,4 +1,4 @@
-@(id: String)
+@(id: String, url: Option[String], refresh: Option[Int])
 
 @main("Jenkins jobs monitoring for " + id) {
 
@@ -10,11 +10,11 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="brand" href="@routes.Application.index(id)">@id jobs </a>
+                <a class="brand" href="@routes.Application.index(id, url, refresh)">@id jobs </a>
                 <ul class="nav">
                     <li class="divider-vertical"></li>
                     <li>
-                        <a href="@routes.Application.indexAll()">All views</a>
+                        <a href="@routes.Application.indexAll(url)">All views</a>
                     </li>
                     <li class="divider-vertical"></li>
                     <li>
@@ -73,7 +73,7 @@
                     $('#cell-' + id).removeClass('zoom-container');
                 }
             }
-            var sse = new EventSource('@routes.Application.view(id)');
+            var sse = new EventSource('@routes.Application.view(id, url, refresh)');
             sse.onmessage = function(e) {
                 var data = JSON.parse(e.data);
                 data.name = data.id;

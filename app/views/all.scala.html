@@ -1,4 +1,4 @@
-@(views: Seq[String])
+@(views: Seq[String], url: Option[String], refresh: Option[Int])
 
 @main("Jenkins jobs monitoring") {
 
@@ -10,7 +10,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="brand" href="@routes.Application.indexAll()">All views </a>
+                <a class="brand" href="@routes.Application.indexAll(url)">All views </a>
                 <ul class="nav">
                     <li class="divider-vertical"></li>
                     <li>
@@ -23,7 +23,7 @@
 
     <table class="table bigtable">
         @for(id <- views) {
-            <tr><td><a href="@routes.Application.index(id)">@id</a></td></tr>
+            <tr><td><a href="@routes.Application.index(id, url, refresh)">@id</a></td></tr>
         }
     </table>
 

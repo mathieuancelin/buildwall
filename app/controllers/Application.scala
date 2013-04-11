@@ -24,24 +24,24 @@ object Application extends Controller {
 
   val jobWriter = Json.writes[Job]
 
-  def indexAll() = Action { request =>
+  def indexAll(url: Option[String]) = Action { request =>
     Async {
-      val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
+      val jenkinsUrl = url.getOrElse(baseUrl)
       WS.url(s"$jenkinsUrl/api/json").withTimeout(5000).get().map { r =>
         val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
-        Ok(views.html.all(names))
+        Ok(views.html.all(names, url, Some(refreshInterval)))
       }
     }
   }
   
-  def index(viewId: String) = Action {
-    Ok(views.html.index(viewId))
+  def index(viewId: String, url: Option[String], refresh: Option[Int]) = Action {
+    Ok(views.html.index(viewId, url, refresh))
   }
 
-  def view(viewId: String) = Action { request =>
+  def view(viewId: String, url: Option[String], refresh: Option[Int]) = Action { request =>
     Async {
-      val jenkinsRefresh = request.queryString.get("refresh").flatMap(_.headOption).map(_.toInt).getOrElse(refreshInterval)
-      val jenkinsUrl = request.queryString.get("url").flatMap(_.headOption).getOrElse(baseUrl)
+      val jenkinsRefresh = refresh.getOrElse(refreshInterval)
+      val jenkinsUrl = url.getOrElse(baseUrl)
       WS.url(s"$jenkinsUrl/view/$viewId/api/json").withTimeout(5000).get().map { response =>
         (response.json \ "jobs").as[Seq[JsValue]].map { jsonJob =>
           createEnumerator((jsonJob \ "name").as[String], jenkinsRefresh, jenkinsUrl)
