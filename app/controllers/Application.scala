@@ -52,13 +52,13 @@ object Application extends Controller {
 
   def createEnumerator(jobId: String, refresh: Int, jenkinsUrl: String) = {
     Enumerator.generateM[JsValue] {
-      Promise.timeout(Some(""), Duration(refresh, TimeUnit.SECONDS)).flatMap { some =>
+      Promise.timeout(Some, Duration(refresh, TimeUnit.SECONDS)).flatMap { _ =>
         WS.url(s"$jenkinsUrl/job/$jobId/api/json").withTimeout(5000).get().flatMap { jobRes =>
           val color = (jobRes.json \ "color").as[String] match {
             case "blue" => "passed"
             case "red" => "failed"
             case "yellow" => "warning"
-            case c:String if (c.contains("anime")) => "anime"
+            case c: String if (c.contains("anime")) => "anime"
             case _ => "unknownstatus"
           }
           val url = (jobRes.json \ "lastBuild" \ "url").as[String]
@@ -74,7 +74,7 @@ object Application extends Controller {
                 (json \ "estimatedDuration").as[Int],
                 author._1,
                 Cache.getAs[String](emailKey(author._1)).getOrElse("unknown@test.com"),
-                Cache.getAs[String](gravatarKey(author._1)).getOrElse(""))//("http://www.gravatar.com/avatar/xxxxxx?s=40&d=identicon"))
+                Cache.getAs[String](gravatarKey(author._1)).getOrElse(""))//("http://www.gravatar.com/avatar/xxxxxx?s=40&d=monsterid"))
             ))
           }
         }
@@ -90,7 +90,7 @@ object Application extends Controller {
       WS.url(s"$url/api/json").withTimeout(5000).get().map { authorRes =>
         val email = (authorRes.json \ "property").as[Seq[JsValue]].filter(_.\("address").asOpt[String].isDefined).headOption.map(_.\("address").as[String]).getOrElse("")
         val crypt = Codecs.md5(email.getBytes)
-        val urlGravatar = s"http://www.gravatar.com/avatar/$crypt?s=60&d=identicon"
+        val urlGravatar = s"http://www.gravatar.com/avatar/$crypt?s=60&d=monsterid" // "monsterid" "retro" "identicon"
         if (Cache.get(emailKey(user)).isEmpty) {
           Cache.set(emailKey(user), email, 86400)
           Cache.set(gravatarKey(user), urlGravatar, 86400)

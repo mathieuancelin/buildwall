@@ -108,7 +108,7 @@ button.refreshUrl {
 }
 
 strong {
-    color: ;
+    /*color: ;*/
 }
 
 .passed, .failed, .warning, .unknownstatus, .anime, .clientError, .serverError, .redirected, .passedHtmlError {
