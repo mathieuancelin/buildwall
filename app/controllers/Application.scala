@@ -3,7 +3,7 @@ package controllers
 import play.api._
 import cache.Cache
 import libs.concurrent.Promise
-import libs.{Codecs, Crypto, EventSource}
+import libs.{Codecs, EventSource}
 import libs.iteratee.Enumerator
 import libs.json.{Json, JsValue}
 import libs.ws.WS
