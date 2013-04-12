@@ -36,6 +36,7 @@
             <em>
                 {{job.name}}
             </em>
+            <em class="gravatar"><img style="margin-top: 10px;" src="{{job.gravatar}}"></em>
         </p>
     </script>
     <script type="text/javascript">
@@ -71,6 +72,9 @@
                     $('#cell-' + id).removeClass('anime-container');
                     $('#cell-' + id).removeClass('shake-container');
                     $('#cell-' + id).removeClass('zoom-container');
+                }
+                if (data.gravatar === '') {
+                    $('#cell-' + id + " .gravatar").remove();
                 }
             }
             var sse = new EventSource('@routes.Application.view(id, url, refresh)');
