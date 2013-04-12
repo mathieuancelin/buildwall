@@ -29,7 +29,7 @@ object Application extends Controller {
       val jenkinsUrl = url.getOrElse(baseUrl)
       WS.url(s"$jenkinsUrl/api/json").withTimeout(5000).get().map { r =>
         val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
-        Ok(views.html.all(names, url, Some(refreshInterval)))
+        Ok(views.html.all(names, url, None))
       }
     }
   }
