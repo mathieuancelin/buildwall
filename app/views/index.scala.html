@@ -39,8 +39,33 @@
             <em class="gravatar"><img style="margin-top: 10px;" src="{{job.gravatar}}"></em>
         </p>
     </script>
+    <audio class="hide" id="sound" loop="loop" src="@routes.Assets.at("fort.mp3")" preload="auto"/>
     <script type="text/javascript">
         $(document).ready(function() {
+            var playing = false;
+            function playOrStop() {
+                var animated = 0;
+                $('#jobs .jobcell ').each(function() {
+                     if ($(this).hasClass('anime-container')) {
+                        animated = animated + 1;
+                     }
+                });
+                if (animated > 0) {
+                    if (!playing) {
+                        playing = true;
+                        //console.log("play");
+                        document.getElementById("sound").seekable.start(0);
+                        document.getElementById("sound").play();
+                    }
+                } else {
+                    if (playing) {
+                        playing = false;
+                        //console.log("stop");
+                        document.getElementById("sound").pause();
+                    }
+                }
+            }
+
             function render(templateId, view) {
                 return Mustache.render( $(templateId).html(), view )
             }
@@ -67,11 +92,12 @@
                     $('#cell-' + id).addClass('zoom-container');
                 } else if (data.color === 'anime') {
                     $('#cell-' + id).addClass('anime-container');
-                    //$('#cell-' + id + " em").html(data.id + "<br/><br/>" + data.author);
+                    playOrStop();
                 } else {
                     $('#cell-' + id).removeClass('anime-container');
                     $('#cell-' + id).removeClass('shake-container');
                     $('#cell-' + id).removeClass('zoom-container');
+                    playOrStop();
                 }
                 if (data.gravatar === '') {
                     $('#cell-' + id + " .gravatar").remove();
