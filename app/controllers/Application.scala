@@ -21,6 +21,7 @@ object Application extends Controller {
 
   val baseUrl = Play.configuration.getString("jenkins.url").getOrElse("https://ci.jenkins-ci.org")
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
+  val sound = Play.configuration.getString("jenkins.sound").getOrElse("/assets/fort.mp3")
 
   val jobWriter = Json.writes[Job]
 
@@ -35,7 +36,7 @@ object Application extends Controller {
   }
   
   def index(viewId: String, url: Option[String], refresh: Option[Int]) = Action {
-    Ok(views.html.index(viewId, url, refresh))
+    Ok(views.html.index(viewId, url, refresh, sound))
   }
 
   def view(viewId: String, url: Option[String], refresh: Option[Int]) = Action { request =>

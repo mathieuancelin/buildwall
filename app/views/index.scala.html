@@ -1,4 +1,4 @@
-@(id: String, url: Option[String], refresh: Option[Int])
+@(id: String, url: Option[String], refresh: Option[Int], soundUrl: String)
 
 @main("Jenkins jobs monitoring for " + id) {
 
@@ -39,7 +39,7 @@
             <em class="gravatar"><img style="margin-top: 10px;" src="{{job.gravatar}}"></em>
         </p>
     </script>
-    <audio class="hide" id="sound" loop="loop" src="@routes.Assets.at("fort.mp3")" preload="auto"/>
+    <audio class="hide" id="sound" loop="loop" src="@soundUrl" preload="auto"/>
     <script type="text/javascript">
         $(document).ready(function() {
             var playing = false;
@@ -54,7 +54,7 @@
                     if (!playing) {
                         playing = true;
                         //console.log("play");
-                        document.getElementById("sound").seekable.start(0);
+                        document.getElementById("sound").currentTime = 0;
                         document.getElementById("sound").play();
                     }
                 } else {
@@ -92,13 +92,12 @@
                     $('#cell-' + id).addClass('zoom-container');
                 } else if (data.color === 'anime') {
                     $('#cell-' + id).addClass('anime-container');
-                    playOrStop();
                 } else {
                     $('#cell-' + id).removeClass('anime-container');
                     $('#cell-' + id).removeClass('shake-container');
                     $('#cell-' + id).removeClass('zoom-container');
-                    playOrStop();
                 }
+                playOrStop();
                 if (data.gravatar === '') {
                     $('#cell-' + id + " .gravatar").remove();
                 }
