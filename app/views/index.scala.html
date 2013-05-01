@@ -1,6 +1,6 @@
-@(id: String, url: Option[String], refresh: Option[Int], soundUrl: String)
+@(id: String, url: Option[String], refresh: Option[Int], soundUrl: String, startDate: Long)
 
-@main("Jenkins jobs monitoring for " + id) {
+@main("Jenkins jobs monitoring for " + id, startDate) {
 
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="navbar-inner">

@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, startDate: Long)(content: Html)
 
 <!DOCTYPE html>
 
@@ -14,5 +14,20 @@
     </head>
     <body>
         @content
+        <script type="text/javascript">
+            (function(){
+                var CURRENT_VERSION = @startDate;
+                function checkForNewVersion () {
+                    $.getJSON('@routes.Application.date()').then(function (version) {
+                        //console.log("check : %s => %s", CURRENT_VERSION, version);
+                        if (CURRENT_VERSION != version) {
+                            console.log("new version! reloading...");
+                            location.reload();
+                        }
+                    });
+                }
+                setInterval(checkForNewVersion, 10000);
+            })();
+        </script>
     </body>
 </html>

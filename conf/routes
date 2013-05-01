@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                           controllers.Application.indexAll(url: Option[String])
+GET     /version/current            controllers.Application.date()
 GET     /:id                        controllers.Application.index(id, url: Option[String], refresh: Option[Int])
 GET     /view/:id                   controllers.Application.view(id, url: Option[String], refresh: Option[Int])
 

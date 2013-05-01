@@ -1,6 +1,6 @@
-@(views: Seq[String], url: Option[String], refresh: Option[Int])
+@(views: Seq[String], url: Option[String], refresh: Option[Int], startDate: Long)
 
-@main("Jenkins jobs monitoring") {
+@main("Jenkins jobs monitoring", startDate) {
 
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="navbar-inner">

@@ -5,7 +5,7 @@ import cache.Cache
 import libs.concurrent.Promise
 import libs.{Codecs, EventSource}
 import libs.iteratee.Enumerator
-import libs.json.{Json, JsValue}
+import play.api.libs.json.{JsNumber, Json, JsValue}
 import libs.ws.WS
 import play.api.mvc._
 import concurrent.duration.Duration
@@ -14,6 +14,7 @@ import play.api.Play.current
 
 import play.api.libs.concurrent.Execution.Implicits._
 import concurrent.Future
+import org.joda.time.DateTime
 
 object Application extends Controller {
 
@@ -23,20 +24,27 @@ object Application extends Controller {
   val refreshInterval = Play.configuration.getInt("jenkins.refresh").getOrElse(10)
   val sound = Play.configuration.getString("jenkins.sound").getOrElse("/assets/fort.mp3")
 
+  val startDate = DateTime.now().getMillis
+  val startDate2 = DateTime.now().getMillis
+
   val jobWriter = Json.writes[Job]
+
+  def date() = Action {
+    Ok( JsNumber(startDate) )
+  }
 
   def indexAll(url: Option[String]) = Action { request =>
     Async {
       val jenkinsUrl = url.getOrElse(baseUrl)
       WS.url(s"$jenkinsUrl/api/json").withTimeout(5000).get().map { r =>
         val names: Seq[String] = (r.json \ "views").as[Seq[JsValue]].map(_.\("name").as[String])
-        Ok(views.html.all(names, url, None))
+        Ok(views.html.all(names, url, None, startDate))
       }
     }
   }
   
   def index(viewId: String, url: Option[String], refresh: Option[Int]) = Action {
-    Ok(views.html.index(viewId, url, refresh, sound))
+    Ok(views.html.index(viewId, url, refresh, sound, startDate))
   }
 
   def view(viewId: String, url: Option[String], refresh: Option[Int]) = Action { request =>
