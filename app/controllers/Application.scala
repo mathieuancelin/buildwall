@@ -25,7 +25,6 @@ object Application extends Controller {
   val sound = Play.configuration.getString("jenkins.sound").getOrElse("/assets/fort.mp3")
 
   val startDate = DateTime.now().getMillis
-  val startDate2 = DateTime.now().getMillis
 
   val jobWriter = Json.writes[Job]
 

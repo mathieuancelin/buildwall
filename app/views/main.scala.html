@@ -19,9 +19,7 @@
                 var CURRENT_VERSION = @startDate;
                 function checkForNewVersion () {
                     $.getJSON('@routes.Application.date()').then(function (version) {
-                        //console.log("check : %s => %s", CURRENT_VERSION, version);
                         if (CURRENT_VERSION != version) {
-                            console.log("new version! reloading...");
                             location.reload();
                         }
                     });
